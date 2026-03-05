@@ -17,7 +17,7 @@ function formatTime(t) {
   return `${display}:${m} ${ampm}`
 }
 
-export default function ListView({ shifts, onEdit, onDelete }) {
+export default function ListView({ shifts, onEdit, onDelete, onAssign }) {
   const [sortKey, setSortKey] = useState('date')
   const [sortDir, setSortDir] = useState('asc')
   const [deleteConfirm, setDeleteConfirm] = useState(null)
@@ -93,6 +93,12 @@ export default function ListView({ shifts, onEdit, onDelete }) {
                 </td>
                 <td className="px-4 py-3">
                   <div className="flex items-center justify-end gap-3">
+                    <button
+                      onClick={() => onAssign && onAssign(shift)}
+                      className="text-blue-600 hover:text-blue-800 font-medium transition-colors"
+                    >
+                      Assign
+                    </button>
                     <button
                       onClick={() => onEdit(shift)}
                       className="text-gray-500 hover:text-gray-900 transition-colors"

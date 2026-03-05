@@ -5,6 +5,7 @@ import Login from './pages/Login'
 import Dashboard from './pages/Dashboard'
 import Seasons from './pages/Seasons'
 import Shifts from './pages/Shifts'
+import Schedule from './pages/Schedule'
 import PrivateRoute from './components/PrivateRoute'
 import ManagerRoute from './components/ManagerRoute'
 
@@ -37,6 +38,14 @@ export default function App() {
                 <ManagerRoute>
                   <Shifts />
                 </ManagerRoute>
+              }
+            />
+            <Route
+              path="/schedule"
+              element={
+                <PrivateRoute>
+                  <Schedule />
+                </PrivateRoute>
               }
             />
             <Route path="*" element={<Navigate to="/" replace />} />

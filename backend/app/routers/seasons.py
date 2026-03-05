@@ -4,7 +4,7 @@ from typing import List
 from ..database import get_db
 from ..models.season import Season
 from ..schemas.season import SeasonCreate, SeasonUpdate, SeasonResponse
-from ..auth.dependencies import require_manager
+from ..auth.dependencies import require_manager, get_current_user
 from ..models.user import User
 
 router = APIRouter(prefix="/seasons", tags=["seasons"])
@@ -12,7 +12,7 @@ router = APIRouter(prefix="/seasons", tags=["seasons"])
 
 @router.get("/", response_model=List[SeasonResponse])
 def list_seasons(
-    current_user: User = Depends(require_manager),
+    current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
     return db.query(Season).order_by(Season.start_date.desc()).all()

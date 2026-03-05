@@ -11,6 +11,7 @@ class Season(Base):
     start_date = Column(Date, nullable=False)
     end_date = Column(Date, nullable=False)
     is_active = Column(Boolean, default=False)
+    self_signup = Column(Boolean, default=False)
     created_by_id = Column(Integer, ForeignKey("users.id"))
 
     created_by = relationship("User", foreign_keys=[created_by_id])

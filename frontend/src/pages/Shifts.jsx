@@ -4,6 +4,7 @@ import { useSeason } from '../context/SeasonContext'
 import { shiftsApi } from '../api/shifts'
 import ShiftModal from '../components/shifts/ShiftModal'
 import BulkShiftModal from '../components/shifts/BulkShiftModal'
+import AssignmentsModal from '../components/shifts/AssignmentsModal'
 import ListView from '../components/shifts/ListView'
 import CalendarView from '../components/shifts/CalendarView'
 
@@ -15,6 +16,7 @@ export default function Shifts() {
   const [view, setView] = useState('list') // 'list' | 'calendar'
   const [shiftModal, setShiftModal] = useState(null) // null | 'new' | shift object
   const [bulkModal, setBulkModal] = useState(false)
+  const [assignShift, setAssignShift] = useState(null) // shift to manage assignments for
 
   const loadShifts = useCallback(async () => {
     if (!selectedSeason) return
@@ -50,6 +52,7 @@ export default function Shifts() {
   }
 
   const openEdit = (shift) => setShiftModal(shift)
+  const openAssign = (shift) => setAssignShift(shift)
 
   if (!selectedSeason) {
     return (
@@ -125,7 +128,7 @@ export default function Shifts() {
           ) : error ? (
             <div className="text-center py-16 text-red-500 text-sm">{error}</div>
           ) : view === 'list' ? (
-            <ListView shifts={shifts} onEdit={openEdit} onDelete={handleDelete} />
+            <ListView shifts={shifts} onEdit={openEdit} onDelete={handleDelete} onAssign={openAssign} />
           ) : (
             <div className="p-4">
               <CalendarView shifts={shifts} onEdit={openEdit} />
@@ -148,6 +151,13 @@ export default function Shifts() {
           seasonId={selectedSeason.id}
           onClose={() => setBulkModal(false)}
           onSaved={handleSaved}
+        />
+      )}
+      {assignShift && (
+        <AssignmentsModal
+          shift={assignShift}
+          onClose={() => setAssignShift(null)}
+          onChanged={loadShifts}
         />
       )}
     </Layout>

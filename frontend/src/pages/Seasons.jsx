@@ -4,7 +4,7 @@ import SeasonBadge, { getSeasonStatus } from '../components/SeasonBadge'
 import { useSeason } from '../context/SeasonContext'
 import { seasonsApi } from '../api/seasons'
 
-const EMPTY_FORM = { name: '', start_date: '', end_date: '' }
+const EMPTY_FORM = { name: '', start_date: '', end_date: '', self_signup: false }
 
 export default function Seasons() {
   const { seasons, loadSeasons } = useSeason()
@@ -27,6 +27,7 @@ export default function Seasons() {
       name: season.name,
       start_date: season.start_date,
       end_date: season.end_date,
+      self_signup: season.self_signup ?? false,
     })
     setError('')
     setModalOpen(true)
@@ -109,6 +110,7 @@ export default function Seasons() {
                   <th className="px-6 py-3 font-medium text-gray-500">Start</th>
                   <th className="px-6 py-3 font-medium text-gray-500">End</th>
                   <th className="px-6 py-3 font-medium text-gray-500">Status</th>
+                  <th className="px-6 py-3 font-medium text-gray-500">Self-Signup</th>
                   <th className="px-6 py-3 font-medium text-gray-500 text-right">
                     Actions
                   </th>
@@ -131,6 +133,13 @@ export default function Seasons() {
                       </td>
                       <td className="px-6 py-4">
                         <SeasonBadge season={season} />
+                      </td>
+                      <td className="px-6 py-4">
+                        {season.self_signup ? (
+                          <span className="text-xs text-green-700 bg-green-50 border border-green-200 px-2 py-0.5 rounded-full font-medium">On</span>
+                        ) : (
+                          <span className="text-xs text-gray-400">Off</span>
+                        )}
                       </td>
                       <td className="px-6 py-4">
                         <div className="flex items-center justify-end gap-3">
@@ -217,6 +226,24 @@ export default function Seasons() {
                   />
                 </div>
               </div>
+              {/* Self-signup toggle */}
+              <label className="flex items-center gap-3 cursor-pointer select-none">
+                <div className="relative">
+                  <input
+                    type="checkbox"
+                    className="sr-only"
+                    checked={form.self_signup}
+                    onChange={(e) => setForm({ ...form, self_signup: e.target.checked })}
+                  />
+                  <div className={`w-10 h-6 rounded-full transition-colors ${form.self_signup ? 'bg-blue-600' : 'bg-gray-200'}`} />
+                  <div className={`absolute top-1 left-1 w-4 h-4 bg-white rounded-full shadow transition-transform ${form.self_signup ? 'translate-x-4' : ''}`} />
+                </div>
+                <div>
+                  <p className="text-sm font-medium text-gray-700">Allow volunteer self-signup</p>
+                  <p className="text-xs text-gray-400">Volunteers can sign up for shifts themselves</p>
+                </div>
+              </label>
+
               {error && (
                 <div className="text-red-600 text-sm bg-red-50 border border-red-200 rounded-lg px-3 py-2">
                   {error}

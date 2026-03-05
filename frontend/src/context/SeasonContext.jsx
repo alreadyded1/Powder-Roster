@@ -10,10 +10,8 @@ export function SeasonProvider({ children }) {
   const [selectedSeason, setSelectedSeason] = useState(null)
   const [loading, setLoading] = useState(false)
 
-  const isManager = user?.role === 'manager' || user?.role === 'super_admin'
-
   const loadSeasons = useCallback(async () => {
-    if (!isManager) return
+    if (!user) return
     setLoading(true)
     try {
       const data = await seasonsApi.list()

@@ -8,7 +8,7 @@ from ..models.shift import Shift
 from ..models.shift_assignment import ShiftAssignment, AssignmentStatus
 from ..models.season import Season
 from ..schemas.shift import ShiftCreate, ShiftUpdate, ShiftWithCount, BulkShiftCreate
-from ..auth.dependencies import require_manager
+from ..auth.dependencies import require_manager, get_current_user
 from ..models.user import User
 
 router = APIRouter(prefix="/shifts", tags=["shifts"])
@@ -79,7 +79,7 @@ def bulk_create_shifts(
 @router.get("/", response_model=List[ShiftWithCount])
 def list_shifts(
     season_id: int = Query(...),
-    current_user: User = Depends(require_manager),
+    current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
     shifts = (
