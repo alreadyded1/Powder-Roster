@@ -9,8 +9,11 @@ import Schedule from './pages/Schedule'
 import Roster from './pages/Roster'
 import Users from './pages/Users'
 import InviteAccept from './pages/InviteAccept'
+import Profile from './pages/Profile'
+import AuditLog from './pages/AuditLog'
 import PrivateRoute from './components/PrivateRoute'
 import ManagerRoute from './components/ManagerRoute'
+import SuperAdminRoute from './components/SuperAdminRoute'
 
 export default function App() {
   return (
@@ -68,6 +71,22 @@ export default function App() {
               }
             />
             <Route path="/invite/:token" element={<InviteAccept />} />
+            <Route
+              path="/profile"
+              element={
+                <PrivateRoute>
+                  <Profile />
+                </PrivateRoute>
+              }
+            />
+            <Route
+              path="/audit"
+              element={
+                <SuperAdminRoute>
+                  <AuditLog />
+                </SuperAdminRoute>
+              }
+            />
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
         </BrowserRouter>

@@ -6,6 +6,7 @@ from ..database import get_db
 from ..models.user import User, UserRole
 from ..schemas.user import UserCreate, UserUpdate, UserResponse
 from ..auth.dependencies import get_current_user, require_manager
+from ..services.audit import log_action
 
 router = APIRouter(prefix="/users", tags=["users"])
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
@@ -82,8 +83,13 @@ def update_user(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Cannot assign super_admin role",
         )
-    for field, value in user_update.model_dump(exclude_unset=True).items():
+    updates = user_update.model_dump(exclude_unset=True)
+    for field, value in updates.items():
         setattr(user, field, value)
+    if "role" in updates:
+        log_action(db, current_user, "user.role_changed", f"{user.name} → {updates['role']}")
+    if updates.get("is_active") is True:
+        log_action(db, current_user, "user.reactivated", user.name)
     db.commit()
     db.refresh(user)
     return user
@@ -101,4 +107,5 @@ def deactivate_user(
     if current_user.role == UserRole.manager and user.role == UserRole.super_admin:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Access denied")
     user.is_active = False
+    log_action(db, current_user, "user.deactivated", user.name)
     db.commit()

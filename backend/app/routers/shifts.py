@@ -12,6 +12,7 @@ from ..auth.dependencies import require_manager, get_current_user
 from ..models.user import User
 from ..models.notification import NotificationType
 from ..services.notifications import create_notification
+from ..services.audit import log_action
 
 router = APIRouter(prefix="/shifts", tags=["shifts"])
 
@@ -103,6 +104,7 @@ def create_shift(
         raise HTTPException(status_code=404, detail="Season not found")
     shift = Shift(**shift_in.model_dump(), created_by_id=current_user.id)
     db.add(shift)
+    log_action(db, current_user, "shift.created", f"{shift_in.title} on {shift_in.date}")
     db.commit()
     db.refresh(shift)
     return {**{c.key: getattr(shift, c.key) for c in shift.__table__.columns}, "assigned_count": 0}
@@ -186,5 +188,6 @@ def delete_shift(
             status_code=status.HTTP_409_CONFLICT,
             detail=f"Cannot delete: {confirmed} confirmed assignment(s). Unassign volunteers first.",
         )
+    log_action(db, current_user, "shift.deleted", f"{shift.title} on {shift.date}")
     db.delete(shift)
     db.commit()

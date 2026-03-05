@@ -6,6 +6,7 @@ from ..models.season import Season
 from ..schemas.season import SeasonCreate, SeasonUpdate, SeasonResponse
 from ..auth.dependencies import require_manager, get_current_user
 from ..models.user import User
+from ..services.audit import log_action
 
 router = APIRouter(prefix="/seasons", tags=["seasons"])
 
@@ -36,6 +37,7 @@ def create_season(
         created_by_id=current_user.id,
     )
     db.add(season)
+    log_action(db, current_user, "season.created", season_in.name)
     db.commit()
     db.refresh(season)
     return season
@@ -98,6 +100,7 @@ def activate_season(
         raise HTTPException(status_code=404, detail="Season not found")
     db.query(Season).filter(Season.id != season_id).update({"is_active": False})
     season.is_active = True
+    log_action(db, current_user, "season.activated", season.name)
     db.commit()
     db.refresh(season)
     return season
@@ -113,6 +116,7 @@ def deactivate_season(
     if not season:
         raise HTTPException(status_code=404, detail="Season not found")
     season.is_active = False
+    log_action(db, current_user, "season.deactivated", season.name)
     db.commit()
     db.refresh(season)
     return season
