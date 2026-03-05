@@ -10,7 +10,7 @@ services:
       - db_data:/app/data
     environment:
       - DATABASE_URL=sqlite:///./data/powder_roster.db
-      - SECRET_KEY=change-me-in-production-use-a-random-32-char-string
+      - SECRET_KEY=${SECRET_KEY:-change-me-please}
     restart: unless-stopped
 
   frontend:
