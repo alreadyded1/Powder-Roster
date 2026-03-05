@@ -1,0 +1,26 @@
+version: '3.9'
+
+services:
+  backend:
+    build: ./backend
+    container_name: powder-roster-backend
+    ports:
+      - "8000:8000"
+    volumes:
+      - db_data:/app/data
+    environment:
+      - DATABASE_URL=sqlite:///./data/powder_roster.db
+      - SECRET_KEY=change-me-in-production-use-a-random-32-char-string
+    restart: unless-stopped
+
+  frontend:
+    build: ./frontend
+    container_name: powder-roster-frontend
+    ports:
+      - "3000:80"
+    depends_on:
+      - backend
+    restart: unless-stopped
+
+volumes:
+  db_data:
