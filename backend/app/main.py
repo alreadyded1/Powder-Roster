@@ -1,7 +1,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from .database import engine, Base
-from .routers import auth, users, seasons
+from .routers import auth, users, seasons, shifts
 
 # Import all models so SQLAlchemy registers them before create_all
 from .models import User, Season, Shift, ShiftAssignment  # noqa: F401
@@ -21,6 +21,7 @@ app.add_middleware(
 app.include_router(auth.router)
 app.include_router(users.router)
 app.include_router(seasons.router)
+app.include_router(shifts.router)
 
 
 @app.get("/health")

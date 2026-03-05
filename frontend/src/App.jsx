@@ -4,6 +4,7 @@ import { SeasonProvider } from './context/SeasonContext'
 import Login from './pages/Login'
 import Dashboard from './pages/Dashboard'
 import Seasons from './pages/Seasons'
+import Shifts from './pages/Shifts'
 import PrivateRoute from './components/PrivateRoute'
 import ManagerRoute from './components/ManagerRoute'
 
@@ -27,6 +28,14 @@ export default function App() {
               element={
                 <ManagerRoute>
                   <Seasons />
+                </ManagerRoute>
+              }
+            />
+            <Route
+              path="/shifts"
+              element={
+                <ManagerRoute>
+                  <Shifts />
                 </ManagerRoute>
               }
             />
