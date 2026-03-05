@@ -8,6 +8,7 @@ const NAV_LINKS = [
   { to: '/seasons', label: 'Seasons', roles: ['super_admin', 'manager'] },
   { to: '/shifts', label: 'Shifts', roles: ['super_admin', 'manager'] },
   { to: '/roster', label: 'Roster', roles: ['super_admin', 'manager'] },
+  { to: '/users', label: 'Users', roles: ['super_admin', 'manager'] },
 ]
 
 export default function Layout({ children }) {
