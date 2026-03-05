@@ -1,6 +1,7 @@
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import SeasonSelector from './SeasonSelector'
+import NotificationBell from './NotificationBell'
 
 const NAV_LINKS = [
   { to: '/', label: 'Dashboard', roles: ['super_admin', 'manager', 'volunteer'] },
@@ -55,6 +56,7 @@ export default function Layout({ children }) {
             {/* Right: season selector + user info */}
             <div className="flex items-center gap-4">
               {isManager && <SeasonSelector />}
+              <NotificationBell />
               <span className="text-sm text-gray-700 hidden md:block">{user?.name}</span>
               <span className="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded-full capitalize font-medium whitespace-nowrap">
                 {roleLabel}

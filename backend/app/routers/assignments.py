@@ -9,6 +9,8 @@ from ..models.season import Season
 from ..models.user import User, UserRole
 from ..schemas.assignment import AssignmentCreate, AssignmentUpdate, AssignmentResponse
 from ..auth.dependencies import require_manager, get_current_user
+from ..services.notifications import create_notification, notify_managers
+from ..models.notification import NotificationType
 
 router = APIRouter(prefix="/assignments", tags=["assignments"])
 
@@ -121,6 +123,15 @@ def assign_volunteer(
         status=body.status,
     )
     db.add(assignment)
+
+    # Notify the volunteer
+    create_notification(
+        db, body.user_id, NotificationType.assigned,
+        "You've been assigned to a shift",
+        f"You were assigned to '{shift.title}' on {shift.date} by {current_user.name}.",
+        shift_id=shift.id,
+    )
+
     db.commit()
     db.refresh(assignment)
     return _to_response(assignment, volunteer)
@@ -167,6 +178,18 @@ def unassign_volunteer(
     assignment = db.query(ShiftAssignment).filter(ShiftAssignment.id == assignment_id).first()
     if not assignment:
         raise HTTPException(status_code=404, detail="Assignment not found")
+
+    # Notify the volunteer before deleting
+    volunteer = db.query(User).filter(User.id == assignment.user_id).first()
+    shift = db.query(Shift).filter(Shift.id == assignment.shift_id).first()
+    if volunteer and shift:
+        create_notification(
+            db, volunteer.id, NotificationType.unassigned,
+            "You've been removed from a shift",
+            f"You were removed from '{shift.title}' on {shift.date} by {current_user.name}.",
+            shift_id=shift.id,
+        )
+
     db.delete(assignment)
     db.commit()
 
@@ -239,6 +262,16 @@ def self_signup(
         status=AssignmentStatus.confirmed,
     )
     db.add(assignment)
+
+    # Notify managers
+    notify_managers(
+        db, NotificationType.self_signed_up,
+        "Volunteer signed up for a shift",
+        f"{current_user.name} signed up for '{shift.title}' on {shift.date}.",
+        shift_id=shift.id,
+        exclude_user_id=None,
+    )
+
     db.commit()
     db.refresh(assignment)
     return _to_response(assignment, current_user)
@@ -261,5 +294,16 @@ def self_withdraw(
     )
     if not assignment:
         raise HTTPException(status_code=404, detail="No active signup found for this shift.")
+
+    shift = db.query(Shift).filter(Shift.id == shift_id).first()
+    if shift:
+        notify_managers(
+            db, NotificationType.self_withdrew,
+            "Volunteer withdrew from a shift",
+            f"{current_user.name} withdrew from '{shift.title}' on {shift.date}.",
+            shift_id=shift.id,
+            exclude_user_id=None,
+        )
+
     db.delete(assignment)
     db.commit()

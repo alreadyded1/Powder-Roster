@@ -10,6 +10,8 @@ from ..models.season import Season
 from ..schemas.shift import ShiftCreate, ShiftUpdate, ShiftWithCount, BulkShiftCreate
 from ..auth.dependencies import require_manager, get_current_user
 from ..models.user import User
+from ..models.notification import NotificationType
+from ..services.notifications import create_notification
 
 router = APIRouter(prefix="/shifts", tags=["shifts"])
 
@@ -128,8 +130,35 @@ def update_shift(
     shift = db.query(Shift).filter(Shift.id == shift_id).first()
     if not shift:
         raise HTTPException(status_code=404, detail="Shift not found")
-    for field, value in shift_update.model_dump(exclude_unset=True).items():
+
+    updates = shift_update.model_dump(exclude_unset=True)
+    changed_fields = {k for k in updates if getattr(shift, k) != updates[k]}
+    time_or_location_changed = bool(
+        changed_fields & {"date", "start_time", "end_time", "location"}
+    )
+
+    for field, value in updates.items():
         setattr(shift, field, value)
+
+    # Notify confirmed volunteers of meaningful changes
+    if time_or_location_changed:
+        assigned_users = (
+            db.query(User)
+            .join(ShiftAssignment, ShiftAssignment.user_id == User.id)
+            .filter(
+                ShiftAssignment.shift_id == shift_id,
+                ShiftAssignment.status == AssignmentStatus.confirmed,
+            )
+            .all()
+        )
+        for volunteer in assigned_users:
+            create_notification(
+                db, volunteer.id, NotificationType.shift_updated,
+                "A shift you're assigned to has changed",
+                f"'{shift.title}' on {shift.date} has been updated. Please check the new details.",
+                shift_id=shift.id,
+            )
+
     db.commit()
     db.refresh(shift)
     return _with_count(db, shift)
