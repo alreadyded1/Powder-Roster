@@ -67,8 +67,8 @@ success "Migrations complete"
 # ── Rebuild frontend ──────────────────────────────────────────────────────────
 info "Rebuilding frontend..."
 cd "$INSTALL_DIR/frontend"
-npm ci --silent
-VITE_API_URL=/api npm run build --silent
+npm ci
+VITE_API_URL=/api npm run build
 success "Frontend rebuilt"
 
 # ── Update nginx config if changed ───────────────────────────────────────────
