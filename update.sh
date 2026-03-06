@@ -7,6 +7,7 @@ set -e
 # ─────────────────────────────────────────────────────────────────────────────
 
 INSTALL_DIR="/opt/powder-roster"
+SERVICE_USER="powder-roster"
 
 RED='\033[0;31m'; GREEN='\033[0;32m'; YELLOW='\033[1;33m'; CYAN='\033[0;36m'; NC='\033[0m'
 info()    { echo -e "${CYAN}[INFO]${NC}  $*"; }
@@ -15,7 +16,6 @@ warn()    { echo -e "${YELLOW}[WARN]${NC}  $*"; }
 die()     { echo -e "${RED}[ERROR]${NC} $*" >&2; exit 1; }
 
 [[ $EUID -ne 0 ]] && die "Please run as root (sudo bash update.sh)"
-
 [[ ! -d "$INSTALL_DIR/.git" ]] && die "Powder Roster not found at $INSTALL_DIR. Run install.sh first."
 
 echo ""
@@ -36,7 +36,7 @@ REMOTE=$(git rev-parse origin/main)
 if [[ "$LOCAL" == "$REMOTE" ]]; then
     success "Already up to date ($(git rev-parse --short HEAD))"
     echo ""
-    docker compose ps
+    systemctl status powder-roster --no-pager -l
     echo ""
     exit 0
 fi
@@ -46,25 +46,42 @@ git pull --quiet origin main
 NEW_SHORT=$(git rev-parse --short HEAD)
 success "Updated $PREV_SHORT → $NEW_SHORT"
 
-# ── Show what changed ─────────────────────────────────────────────────────────
 echo ""
 info "Changes:"
 git log --oneline "${LOCAL}..${REMOTE}" | sed 's/^/    /'
 echo ""
 
-# ── Rebuild and restart ───────────────────────────────────────────────────────
-info "Rebuilding containers..."
-docker compose --env-file .env up -d --build
+# ── Update Python dependencies ────────────────────────────────────────────────
+info "Updating Python dependencies..."
+"$INSTALL_DIR/venv/bin/pip" install --quiet --upgrade pip
+"$INSTALL_DIR/venv/bin/pip" install --quiet -r "$INSTALL_DIR/backend/requirements.txt"
+success "Python dependencies updated"
 
-# ── Remove dangling images ────────────────────────────────────────────────────
-DANGLING=$(docker images -f "dangling=true" -q 2>/dev/null)
-if [[ -n "$DANGLING" ]]; then
-    info "Removing unused images..."
-    docker rmi $DANGLING &>/dev/null || true
-fi
+# ── Run migrations ────────────────────────────────────────────────────────────
+info "Running database migrations..."
+cd "$INSTALL_DIR/backend"
+"$INSTALL_DIR/venv/bin/alembic" upgrade head
+chown "$SERVICE_USER:$SERVICE_USER" "$INSTALL_DIR/backend/powder_roster.db" 2>/dev/null || true
+success "Migrations complete"
+
+# ── Rebuild frontend ──────────────────────────────────────────────────────────
+info "Rebuilding frontend..."
+cd "$INSTALL_DIR/frontend"
+npm ci --silent
+VITE_API_URL=/api npm run build --silent
+success "Frontend rebuilt"
+
+# ── Update nginx config if changed ───────────────────────────────────────────
+cp "$INSTALL_DIR/frontend/nginx.conf" /etc/nginx/sites-available/powder-roster
+nginx -t && systemctl reload nginx
+
+# ── Restart backend service ───────────────────────────────────────────────────
+info "Restarting backend service..."
+systemctl restart powder-roster
+success "Service restarted"
 
 echo ""
 success "Update complete!"
 echo ""
-docker compose ps
+systemctl status powder-roster --no-pager -l
 echo ""

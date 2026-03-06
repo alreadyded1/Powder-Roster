@@ -1,6 +1,6 @@
 # Powder Roster
 
-A self-hosted volunteer staff scheduling app for ski patrol, mountain ops, or any team that runs shift-based rosters. Built with FastAPI + React, deployable via Docker Compose.
+A self-hosted volunteer staff scheduling app for ski patrol, mountain ops, or any team that runs shift-based rosters. Built with FastAPI + React, runs natively via systemd and nginx.
 
 ---
 
@@ -22,10 +22,10 @@ A self-hosted volunteer staff scheduling app for ski patrol, mountain ops, or an
 
 - A Linux host (bare metal, VM, or LXC container) running **Debian 11/12** or **Ubuntu 22.04+**
 - Root / sudo access
-- Ports **3000** (app) and **8000** (API) available
-- Internet access to pull Docker images and the repo on first install
+- Port **80** available
+- Internet access to pull the repo and packages on first install
 
-No other dependencies — Docker is installed automatically by the install script.
+No Docker required — the install script sets everything up natively.
 
 ---
 
@@ -46,15 +46,18 @@ bash install.sh
 ```
 
 The install script will:
-1. Install Docker CE and the Compose plugin if not already present
+1. Install Python 3, Node.js 20, and nginx via apt
 2. Clone the repo to `/opt/powder-roster`
-3. Generate a random `SECRET_KEY` and save it to `/opt/powder-roster/.env`
-4. Build and start both containers
-5. Print the URL and default login credentials
+3. Create a `powder-roster` system user
+4. Create a Python virtualenv and install backend dependencies
+5. Run database migrations and seed the default admin account
+6. Build the React frontend
+7. Configure nginx to serve the app on port 80
+8. Create and start a `powder-roster` systemd service for the backend
 
 ### After install
 
-Open your browser to `http://<your-server-ip>:3000`
+Open your browser to `http://<your-server-ip>`
 
 **Default credentials:**
 | Field | Value |
@@ -75,35 +78,31 @@ bash /opt/powder-roster/update.sh
 The update script will:
 1. Check for new commits — exits early if already up to date
 2. Show a summary of changes being applied
-3. Rebuild only the containers that changed
-4. Remove dangling Docker images
-5. Print container status when done
+3. Update Python dependencies
+4. Run any new database migrations
+5. Rebuild the frontend
+6. Restart the backend service and reload nginx
 
 ---
 
 ## Managing the app
 
-All commands should be run from `/opt/powder-roster`.
-
 ```bash
-# View running containers
-docker compose ps
+# Check status
+systemctl status powder-roster
 
-# View logs (all services)
-docker compose logs -f
+# View backend logs
+journalctl -u powder-roster -f
 
-# View logs (one service)
-docker compose logs -f backend
-docker compose logs -f frontend
+# Restart backend
+systemctl restart powder-roster
 
-# Stop
-docker compose down
+# Stop / start
+systemctl stop powder-roster
+systemctl start powder-roster
 
-# Start
-docker compose up -d
-
-# Restart a single service
-docker compose restart backend
+# Nginx logs
+journalctl -u nginx -f
 ```
 
 ---
@@ -119,11 +118,8 @@ Settings are read from `/opt/powder-roster/.env`. This file is created automatic
 To change the secret key after install:
 
 ```bash
-# Edit the .env file
 nano /opt/powder-roster/.env
-
-# Restart the backend to apply changes
-docker compose restart backend
+systemctl restart powder-roster
 ```
 
 > **Note:** Changing `SECRET_KEY` will invalidate all active sessions — all users will need to log in again.
@@ -132,28 +128,20 @@ docker compose restart backend
 
 ## Data & Backups
 
-The database is a SQLite file stored in a named Docker volume (`db_data`), mounted at `/app/data/powder_roster.db` inside the backend container.
+The database is a SQLite file at `/opt/powder-roster/backend/powder_roster.db`.
 
 **Backup:**
 ```bash
-docker cp powder-roster-backend:/app/data/powder_roster.db ./backup-$(date +%F).db
+cp /opt/powder-roster/backend/powder_roster.db ~/backup-$(date +%F).db
 ```
 
 **Restore:**
 ```bash
-docker cp ./backup-2025-01-01.db powder-roster-backend:/app/data/powder_roster.db
-docker compose restart backend
+systemctl stop powder-roster
+cp ~/backup-2025-01-01.db /opt/powder-roster/backend/powder_roster.db
+chown powder-roster:powder-roster /opt/powder-roster/backend/powder_roster.db
+systemctl start powder-roster
 ```
-
----
-
-## Proxmox LXC Setup (recommended)
-
-1. Create an **Ubuntu 22.04** unprivileged container in Proxmox (1 CPU, 1 GB RAM minimum; 2 GB recommended)
-2. Give the container internet access and note its IP
-3. Open a shell and run the one-liner install command above
-
-For external access, point a reverse proxy (e.g. Nginx Proxy Manager or Caddy) at `http://<lxc-ip>:3000`.
 
 ---
 
@@ -161,19 +149,24 @@ For external access, point a reverse proxy (e.g. Nginx Proxy Manager or Caddy) a
 
 | Layer | Technology |
 |-------|------------|
-| Backend | Python 3.12, FastAPI, SQLAlchemy 2.0, Alembic, passlib/bcrypt, python-jose |
+| Backend | Python 3, FastAPI, SQLAlchemy 2.0, Alembic, passlib/bcrypt, python-jose |
 | Database | SQLite (default) — PostgreSQL-ready via `DATABASE_URL` |
 | Frontend | React 18, Vite, Tailwind CSS 3, React Router v6, Axios |
 | Auth | JWT bearer tokens |
-| Deployment | Docker Compose, Nginx (frontend static serving + API proxy) |
+| Deployment | systemd (backend), nginx (frontend + reverse proxy) |
 
 ---
 
 ## Uninstall
 
 ```bash
-docker compose -f /opt/powder-roster/docker-compose.yml down -v
+systemctl stop powder-roster
+systemctl disable powder-roster
+rm /etc/systemd/system/powder-roster.service
+systemctl daemon-reload
+rm /etc/nginx/sites-enabled/powder-roster
+rm /etc/nginx/sites-available/powder-roster
+systemctl reload nginx
 rm -rf /opt/powder-roster
+userdel powder-roster
 ```
-
-> The `-v` flag removes the database volume. Omit it if you want to keep your data.
