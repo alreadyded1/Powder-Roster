@@ -10,29 +10,35 @@ export function SeasonProvider({ children }) {
   const [selectedSeason, setSelectedSeason] = useState(null)
   const [loading, setLoading] = useState(false)
 
-  const loadSeasons = useCallback(async () => {
-    if (!user) return
+  // fetchSeasons has no dependency on user — the guard lives in the effect.
+  // This avoids the stale-closure problem where useCallback captured user=null
+  // from the first render and never re-created itself.
+  const fetchSeasons = useCallback(async () => {
     setLoading(true)
     try {
       const data = await seasonsApi.list()
       setSeasons(data)
-      // Default to the active season, then the most recent
       const active = data.find((s) => s.is_active)
       setSelectedSeason((prev) => prev ?? active ?? data[0] ?? null)
     } catch {
-      // silently fail — auth errors handled by axios interceptor
+      // silently fail — axios interceptor handles 401
     } finally {
       setLoading(false)
     }
-  }, [user])
+  }, [])
 
   useEffect(() => {
-    if (user) loadSeasons()
-  }, [user, loadSeasons])
+    if (user) {
+      fetchSeasons()
+    } else {
+      setSeasons([])
+      setSelectedSeason(null)
+    }
+  }, [user, fetchSeasons])
 
   return (
     <SeasonContext.Provider
-      value={{ seasons, selectedSeason, setSelectedSeason, loadSeasons, loading }}
+      value={{ seasons, selectedSeason, setSelectedSeason, loadSeasons: fetchSeasons, loading }}
     >
       {children}
     </SeasonContext.Provider>

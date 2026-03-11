@@ -44,18 +44,6 @@ def create_season(
     return season
 
 
-@router.get("/{season_id}", response_model=SeasonResponse)
-def get_season(
-    season_id: int,
-    current_user: User = Depends(require_manager),
-    db: Session = Depends(get_db),
-):
-    season = db.query(Season).filter(Season.id == season_id).first()
-    if not season:
-        raise HTTPException(status_code=404, detail="Season not found")
-    return season
-
-
 @router.patch("/{season_id}", response_model=SeasonResponse)
 def update_season(
     season_id: int,
@@ -69,7 +57,6 @@ def update_season(
 
     data = season_update.model_dump(exclude_unset=True)
 
-    # Validate dates if both provided or one changes the existing pair
     start = data.get("start_date", season.start_date)
     end = data.get("end_date", season.end_date)
     if end <= start:
@@ -78,13 +65,13 @@ def update_season(
             detail="end_date must be after start_date",
         )
 
-    # If activating via patch, enforce single-active constraint
     if data.get("is_active"):
         db.query(Season).filter(Season.id != season_id).update({"is_active": False})
 
     for field, value in data.items():
         setattr(season, field, value)
 
+    log_action(db, current_user, "season.updated", season.name)
     db.commit()
     db.refresh(season)
     return season
