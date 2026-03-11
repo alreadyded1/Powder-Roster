@@ -97,7 +97,7 @@ chown "$SERVICE_USER:$SERVICE_USER" "$ENV_FILE"
 # ── Build frontend ────────────────────────────────────────────────────────────
 info "Building frontend..."
 cd "$INSTALL_DIR/frontend"
-npm ci
+npm install
 VITE_API_URL=/api npm run build
 success "Frontend built"
 

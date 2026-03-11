@@ -67,7 +67,7 @@ success "Migrations complete"
 # ── Rebuild frontend ──────────────────────────────────────────────────────────
 info "Rebuilding frontend..."
 cd "$INSTALL_DIR/frontend"
-npm ci
+npm install
 VITE_API_URL=/api npm run build
 success "Frontend rebuilt"
 
