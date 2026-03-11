@@ -4,7 +4,7 @@ from .database import engine, Base
 from .routers import auth, users, seasons, shifts, assignments, roster, invites, notifications, audit
 
 # Import all models so SQLAlchemy registers them before create_all
-from .models import User, Season, Shift, ShiftAssignment  # noqa: F401
+from .models import User, Season, Shift, ShiftAssignment, InviteToken, Notification, AuditLog  # noqa: F401
 
 Base.metadata.create_all(bind=engine)
 
