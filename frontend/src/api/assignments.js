@@ -3,8 +3,8 @@ import api from './client'
 export const assignmentsApi = {
   // Manager
   list: (shiftId) =>
-    api.get('/assignments', { params: { shift_id: shiftId } }).then((r) => r.data),
-  assign: (data) => api.post('/assignments', data).then((r) => r.data),
+    api.get('/assignments/', { params: { shift_id: shiftId } }).then((r) => r.data),
+  assign: (data) => api.post('/assignments/', data).then((r) => r.data),
   updateStatus: (id, status) =>
     api.patch(`/assignments/${id}`, { status }).then((r) => r.data),
   unassign: (id) => api.delete(`/assignments/${id}`),

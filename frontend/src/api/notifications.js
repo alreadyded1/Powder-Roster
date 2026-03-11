@@ -1,7 +1,7 @@
 import api from './client'
 
 export const notificationsApi = {
-  list: (limit = 50) => api.get('/notifications', { params: { limit } }).then((r) => r.data),
+  list: (limit = 50) => api.get('/notifications/', { params: { limit } }).then((r) => r.data),
   count: () => api.get('/notifications/count').then((r) => r.data.count),
   markRead: (id) => api.post(`/notifications/${id}/read`).then((r) => r.data),
   markAllRead: () => api.post('/notifications/read-all'),

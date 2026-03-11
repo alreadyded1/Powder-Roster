@@ -34,6 +34,7 @@ def create_season(
         name=season_in.name,
         start_date=season_in.start_date,
         end_date=season_in.end_date,
+        self_signup=season_in.self_signup,
         created_by_id=current_user.id,
     )
     db.add(season)

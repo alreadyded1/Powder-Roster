@@ -2,7 +2,7 @@ import api from './client'
 
 export const rosterApi = {
   list: (seasonId) =>
-    api.get('/roster', { params: { season_id: seasonId } }).then((r) => r.data),
+    api.get('/roster/', { params: { season_id: seasonId } }).then((r) => r.data),
 
   summary: (seasonId) =>
     api.get('/roster/summary', { params: { season_id: seasonId } }).then((r) => r.data),
