@@ -17,7 +17,7 @@ function formatTime(t) {
   return `${display}:${m} ${ampm}`
 }
 
-export default function ListView({ shifts, onEdit, onDelete, onAssign }) {
+export default function ListView({ shifts, onEdit, onDelete, onAssign, readOnly = false }) {
   const [sortKey, setSortKey] = useState('date')
   const [sortDir, setSortDir] = useState('asc')
   const [deleteConfirm, setDeleteConfirm] = useState(null)
@@ -74,7 +74,7 @@ export default function ListView({ shifts, onEdit, onDelete, onAssign }) {
               <SortHeader k="title">Title</SortHeader>
               <th className="px-4 py-3 text-left font-medium text-gray-500">Location</th>
               <SortHeader k="fill">Slots</SortHeader>
-              <th className="px-4 py-3 text-right font-medium text-gray-500">Actions</th>
+              {!readOnly && <th className="px-4 py-3 text-right font-medium text-gray-500">Actions</th>}
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-50">
@@ -91,28 +91,30 @@ export default function ListView({ shifts, onEdit, onDelete, onAssign }) {
                 <td className="px-4 py-3">
                   <FillIndicator shift={shift} />
                 </td>
-                <td className="px-4 py-3">
-                  <div className="flex items-center justify-end gap-3">
-                    <button
-                      onClick={() => onAssign && onAssign(shift)}
-                      className="text-blue-600 hover:text-blue-800 font-medium transition-colors"
-                    >
-                      Assign
-                    </button>
-                    <button
-                      onClick={() => onEdit(shift)}
-                      className="text-gray-500 hover:text-gray-900 transition-colors"
-                    >
-                      Edit
-                    </button>
-                    <button
-                      onClick={() => setDeleteConfirm(shift)}
-                      className="text-red-400 hover:text-red-600 transition-colors"
-                    >
-                      Delete
-                    </button>
-                  </div>
-                </td>
+                {!readOnly && (
+                  <td className="px-4 py-3">
+                    <div className="flex items-center justify-end gap-3">
+                      <button
+                        onClick={() => onAssign && onAssign(shift)}
+                        className="text-blue-600 hover:text-blue-800 font-medium transition-colors"
+                      >
+                        Assign
+                      </button>
+                      <button
+                        onClick={() => onEdit(shift)}
+                        className="text-gray-500 hover:text-gray-900 transition-colors"
+                      >
+                        Edit
+                      </button>
+                      <button
+                        onClick={() => setDeleteConfirm(shift)}
+                        className="text-red-400 hover:text-red-600 transition-colors"
+                      >
+                        Delete
+                      </button>
+                    </div>
+                  </td>
+                )}
               </tr>
             ))}
           </tbody>

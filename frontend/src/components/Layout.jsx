@@ -8,7 +8,7 @@ const NAV_LINKS = [
   { to: '/', label: 'Dashboard', roles: ['super_admin', 'manager', 'volunteer'] },
   { to: '/schedule', label: 'My Schedule', roles: ['super_admin', 'manager', 'volunteer'] },
   { to: '/seasons', label: 'Seasons', roles: ['super_admin', 'manager'] },
-  { to: '/shifts', label: 'Shifts', roles: ['super_admin', 'manager'] },
+  { to: '/shifts', label: 'Shifts', roles: ['super_admin', 'manager', 'volunteer'] },
   { to: '/roster', label: 'Roster', roles: ['super_admin', 'manager'] },
   { to: '/users', label: 'Users', roles: ['super_admin', 'manager'] },
   { to: '/audit', label: 'Audit Log', roles: ['super_admin'] },

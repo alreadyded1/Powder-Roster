@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import Layout from '../components/Layout'
 import { useSeason } from '../context/SeasonContext'
+import { useAuth } from '../context/AuthContext'
 import { shiftsApi } from '../api/shifts'
 import ShiftModal from '../components/shifts/ShiftModal'
 import BulkShiftModal from '../components/shifts/BulkShiftModal'
@@ -9,7 +10,9 @@ import ListView from '../components/shifts/ListView'
 import CalendarView from '../components/shifts/CalendarView'
 
 export default function Shifts() {
+  const { user } = useAuth()
   const { selectedSeason } = useSeason()
+  const isManager = user?.role === 'manager' || user?.role === 'super_admin'
   const [shifts, setShifts] = useState([])
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
@@ -91,18 +94,22 @@ export default function Shifts() {
                 </button>
               ))}
             </div>
-            <button
-              onClick={() => setBulkModal(true)}
-              className="border border-gray-300 text-gray-700 text-sm font-medium px-3 py-1.5 rounded-lg hover:bg-gray-50 transition-colors"
-            >
-              Bulk Create
-            </button>
-            <button
-              onClick={() => setShiftModal('new')}
-              className="bg-blue-600 text-white text-sm font-medium px-4 py-1.5 rounded-lg hover:bg-blue-700 transition-colors"
-            >
-              + New Shift
-            </button>
+            {isManager && (
+              <>
+                <button
+                  onClick={() => setBulkModal(true)}
+                  className="border border-gray-300 text-gray-700 text-sm font-medium px-3 py-1.5 rounded-lg hover:bg-gray-50 transition-colors"
+                >
+                  Bulk Create
+                </button>
+                <button
+                  onClick={() => setShiftModal('new')}
+                  className="bg-blue-600 text-white text-sm font-medium px-4 py-1.5 rounded-lg hover:bg-blue-700 transition-colors"
+                >
+                  + New Shift
+                </button>
+              </>
+            )}
           </div>
         </div>
 
@@ -128,7 +135,7 @@ export default function Shifts() {
           ) : error ? (
             <div className="text-center py-16 text-red-500 text-sm">{error}</div>
           ) : view === 'list' ? (
-            <ListView shifts={shifts} onEdit={openEdit} onDelete={handleDelete} onAssign={openAssign} />
+            <ListView shifts={shifts} onEdit={openEdit} onDelete={handleDelete} onAssign={openAssign} readOnly={!isManager} />
           ) : (
             <div className="p-4">
               <CalendarView shifts={shifts} onEdit={openEdit} />
