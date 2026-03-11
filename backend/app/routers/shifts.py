@@ -175,19 +175,18 @@ def delete_shift(
     shift = db.query(Shift).filter(Shift.id == shift_id).first()
     if not shift:
         raise HTTPException(status_code=404, detail="Shift not found")
-    confirmed = (
-        db.query(func.count(ShiftAssignment.id))
-        .filter(
-            ShiftAssignment.shift_id == shift_id,
-            ShiftAssignment.status == AssignmentStatus.confirmed,
+
+    # Notify and unassign all volunteers before deleting
+    assignments = db.query(ShiftAssignment).filter(ShiftAssignment.shift_id == shift_id).all()
+    for asgn in assignments:
+        create_notification(
+            db, asgn.user_id, NotificationType.shift_updated,
+            "A shift you were assigned to has been cancelled",
+            f"'{shift.title}' on {shift.date} has been deleted and you have been unassigned.",
+            shift_id=shift.id,
         )
-        .scalar()
-    )
-    if confirmed > 0:
-        raise HTTPException(
-            status_code=status.HTTP_409_CONFLICT,
-            detail=f"Cannot delete: {confirmed} confirmed assignment(s). Unassign volunteers first.",
-        )
+        db.delete(asgn)
+
     log_action(db, current_user, "shift.deleted", f"{shift.title} on {shift.date}")
     db.delete(shift)
     db.commit()
