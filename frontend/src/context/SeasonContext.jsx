@@ -24,7 +24,7 @@ export function SeasonProvider({ children }) {
     } finally {
       setLoading(false)
     }
-  }, [])
+  }, [user])
 
   useEffect(() => {
     if (user) loadSeasons()
