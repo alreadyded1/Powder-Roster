@@ -92,6 +92,7 @@ info "Seeding database..."
 
 # ── Set ownership ─────────────────────────────────────────────────────────────
 chown "$SERVICE_USER:$SERVICE_USER" "$INSTALL_DIR/backend/powder_roster.db" 2>/dev/null || true
+chown "$SERVICE_USER:$SERVICE_USER" "$INSTALL_DIR/backend"
 chown "$SERVICE_USER:$SERVICE_USER" "$ENV_FILE"
 
 # ── Build frontend ────────────────────────────────────────────────────────────
