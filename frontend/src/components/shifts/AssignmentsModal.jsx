@@ -32,13 +32,16 @@ export default function AssignmentsModal({ shift, onClose, onChanged }) {
 
   const load = async () => {
     setLoading(true)
+    setError('')
     try {
       const [asgns, users] = await Promise.all([
         assignmentsApi.list(shift.id),
-        api.get('/users').then((r) => r.data),
+        api.get('/users/').then((r) => r.data),
       ])
       setAssignments(asgns)
       setVolunteers(users)
+    } catch {
+      setError('Failed to load assignment data.')
     } finally {
       setLoading(false)
     }
